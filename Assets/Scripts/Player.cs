@@ -15,15 +15,14 @@ public class Player : MonoBehaviour
     [SerializeField] float paddingBottom;
     [SerializeField] Collider2D studyCollider;
     [SerializeField] Collider2D playCollider;
+    [SerializeField] Collider2D sleepCollider;
+    [SerializeField] PlayArea playArea;
 
-    private bool canStudy = false;
-    private bool canPlay = false;
-
+    private GameManager.PlayerActionState actionableState = GameManager.PlayerActionState.Idle;
 
     Vector2 minBounds;
     Vector2 maxBounds;
 
-    // Start is called before the first frame update
     void Start()
     {
         InitCameraBounds();
@@ -60,76 +59,94 @@ public class Player : MonoBehaviour
         rawInput = value.Get<Vector2>();
     }
 
+    void OnMonitorOn()
+    {
+        playCollider.enabled = false;
+        playCollider.enabled = true;
+    }
+
     void OnConfirm(InputValue value)
     {
         if (!value.isPressed) return;
-        switch (GameManager.Instance.PlayerState)
+        if (actionableState == GameManager.PlayerActionState.Playing)
         {
-            case GameManager.PlayerActionState.Studying:
-                GameManager.Instance.PlayerState = GameManager.PlayerActionState.Idle;
-                displayText.text = "";
-                studyCollider.enabled = true;
-                break;
-            case GameManager.PlayerActionState.Playing:
-                GameManager.Instance.PlayerState = GameManager.PlayerActionState.Idle;
-                displayText.text = "";
-                playCollider.enabled = true;
-                break;
+            if (playArea.MonitorisOn || playArea.IsTurningOn)
+            {
+                playArea.TurnOffMonitor();
+                displayText.text = "Pree Z to turn on Monitor";
+            }
+            else
+            {
+                playArea.TurnOnMonitor(OnMonitorOn);
+                displayText.text = "Pree Z to turn off Monitor";
+            }
         }
     }
 
     void OnAct(InputValue value)
     {
-        if (!value.isPressed) return;
-        switch (GameManager.Instance.PlayerState)
+        if (value.isPressed)
         {
-            case GameManager.PlayerActionState.Idle:
-                if (canStudy)
-                {
-                    GameManager.Instance.PlayerState = GameManager.PlayerActionState.Studying;
-                    canStudy = false;
+            switch (GameManager.Instance.PlayerState)
+            {
+                case GameManager.PlayerActionState.Idle:
+                    GameManager.Instance.PlayerState = actionableState;
+                    actionableState = GameManager.PlayerActionState.Idle;
                     studyCollider.enabled = false;
-                    displayText.text = "Press Z to exit";
-                }
-
-                if (canPlay)
-                {
-                    GameManager.Instance.PlayerState = GameManager.PlayerActionState.Playing;
-                    canPlay = false;
                     playCollider.enabled = false;
-                    displayText.text = "Press Z to exit";;
-                }
-                break;            
+                    sleepCollider.enabled = false;
+                    displayText.text = "";
+                    break;            
+            }
         }
+        else
+        {
+            GameManager.Instance.PlayerState = GameManager.PlayerActionState.Idle;
+            studyCollider.enabled = true;
+            playCollider.enabled = true;
+            sleepCollider.enabled = true;
+        }
+        
     }
 
     void OnTriggerEnter2D(Collider2D other) 
     {
-        if (other.tag == "StudyArea")
+        switch (other.tag)
         {
-            canStudy = true;
-            displayText.text = "Press X to Study";
-        }
+            case "StudyArea":
+                actionableState = GameManager.PlayerActionState.Studying;
+                displayText.text = "Hold X to Study";
+                break;
+            case "PlayArea":
+                actionableState = GameManager.PlayerActionState.Playing;
 
-        if (other.tag == "PlayArea")
-        {
-            canPlay = true;
-            displayText.text = "Press X to Play";
+                if (playArea.MonitorisOn)
+                {
+                    displayText.text = "Hold X to Play\nPress Z to turn off Monitor";
+                }
+                else
+                {
+                    if (!playArea.IsTurningOn) displayText.text = "Pree Z to turn on Monitor";
+                }
+
+                break;
+            case "SleepArea":
+                actionableState = GameManager.PlayerActionState.Napping;
+                displayText.text = "Hold X to Nap";
+                break;
         }
     }
 
     void OnTriggerExit2D(Collider2D other)
     {
-        if (other.tag == "StudyArea")
+        switch (other.tag)
         {
-            canStudy = false;
-            displayText.text = "";
-        }
-
-        if (other.tag == "PlayArea")
-        {
-            canPlay = false;
-            displayText.text = "";
+            case "StudyArea":
+            case "PlayArea":
+            case "SleepArea":
+                actionableState = GameManager.PlayerActionState.Idle;
+                displayText.text = "";
+                break;
         }
     }
 }

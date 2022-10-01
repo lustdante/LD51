@@ -5,7 +5,7 @@ using TMPro;
 
 public class GameManager : Singleton<GameManager>
 {
-    public enum PlayerActionState {Idle, Studying, Playing};
+    public enum PlayerActionState {Idle, Studying, Playing, Napping};
 
     [SerializeField] Transform doorPos;
     [SerializeField] GameObject enemyPrefab;
@@ -14,6 +14,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] Meter playMeter;
     [SerializeField] Meter boredomMeter;
     [SerializeField] Meter focusMeter;
+    [SerializeField] Meter tiredMeter;
     [SerializeField] float studyGoal = 100.0f;
     [SerializeField] float playGoal = 100.0f;
     [SerializeField] float boredomMax = 6.0f;
@@ -21,12 +22,16 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] float boredomPlayDecay = 1.0f;
     [SerializeField] float focusMax = 3.0f;
     [SerializeField] float focusDecay = 1.5f;
+    [SerializeField] float tiredMax = 30.0f;
+    [SerializeField] float tiredStudyRate = 1.5f;
+    [SerializeField] float tiredDecay = 6.0f;
     [SerializeField] TextMeshProUGUI studyMultText;
 
     private float studyProgress = 0.0f;
     private float playProgress = 0.0f;
     private float boredomProgress = 0.0f;
     private float focusProgress = 0.0f;
+    private float tiredProgress = 0.0f;
 
     private PlayerActionState playerState = PlayerActionState.Idle;
     public PlayerActionState PlayerState {
@@ -47,6 +52,7 @@ public class GameManager : Singleton<GameManager>
                     playMeter.gameObject.SetActive(true);
                     break;
             }
+
             this.playerState = value;
         }
     }
@@ -57,6 +63,7 @@ public class GameManager : Singleton<GameManager>
         playMeter.MaxValue = playGoal;
         boredomMeter.MaxValue = boredomMax;
         focusMeter.MaxValue = focusMax;
+        tiredMeter.MaxValue = tiredMax;
     }
 
     private void Update()
@@ -80,6 +87,8 @@ public class GameManager : Singleton<GameManager>
                 boredomMeter.Value = boredomProgress;
                 focusProgress = Mathf.Clamp(focusProgress + Time.deltaTime, 0, focusMax);
                 focusMeter.Value = focusProgress;
+                tiredProgress = Mathf.Clamp(tiredProgress + Time.deltaTime, 0, tiredMax);
+                tiredMeter.Value = tiredProgress;
                 break;
             case PlayerActionState.Studying:
                 if (boredomProgress < (boredomMax / 2))
@@ -108,6 +117,7 @@ public class GameManager : Singleton<GameManager>
                     focusMult = 1.5f;
                     studyMults += "x 1.5 Focused\n";
                 }
+                studyMultText.text = studyMults;
 
                 studyProgress = Mathf.Clamp(studyProgress + Time.deltaTime * boredomMult * focusMult, 0, studyGoal);
                 studyMeter.Value = studyProgress;
@@ -115,7 +125,12 @@ public class GameManager : Singleton<GameManager>
                 boredomMeter.Value = boredomProgress;
                 focusProgress = Mathf.Clamp(focusProgress + Time.deltaTime, 0, focusMax);
                 focusMeter.Value = focusProgress;
-                studyMultText.text = studyMults;
+                tiredProgress = Mathf.Clamp(tiredProgress + Time.deltaTime * tiredStudyRate, 0, tiredMax);
+                tiredMeter.Value = tiredProgress;
+                break;
+            case PlayerActionState.Napping:
+                tiredProgress = Mathf.Clamp(tiredProgress - Time.deltaTime * tiredDecay, 0, tiredMax);
+                tiredMeter.Value = tiredProgress;
                 break;
         }
     }
@@ -137,8 +152,6 @@ public class GameManager : Singleton<GameManager>
 
     public void StartEventLoop()
     {
-        // timer.gameObject.SetActive(true);
-        // timer.StartTimer();
         StartCoroutine(EventLoop());
     }
 

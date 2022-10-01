@@ -49,12 +49,15 @@ public class Player : MonoBehaviour
     {
         rawInput = value.Get<Vector2>();
     }
-}
 
-/*
-Vector2 delta = rawInput * moveSpeed * Time.deltaTime;
-        Vector2 newPos = new Vector2();
-        newPos.x = Mathf.Clamp(transform.position.x + delta.x, minBounds.x + paddingLeft, maxBounds.x - paddingRight);
-        newPos.y = Mathf.Clamp(transform.position.y + delta.y, minBounds.y + paddingBottom, maxBounds.y - paddingTop);
-        transform.position = newPos;
-*/
+    void OnConfirm(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            // timer.gameObject.SetActive(true);
+            // Timer.Instance.gameObject.SetActive(true);
+            // Timer.Instance.StartTimer();
+            GameManager.Instance.StartTimer();
+        }
+    }
+}

@@ -38,7 +38,7 @@ public class Clock : MonoBehaviour
 
     void Update()
     {
-        if (!clockStarted) return;
+        if (!clockStarted || GameManager.Instance.IsGamePaused) return;
         elapsedTime += Time.deltaTime * debugTimeRate;
         UpdateClockText();
 

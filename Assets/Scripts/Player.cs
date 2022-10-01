@@ -31,6 +31,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (GameManager.Instance.IsGamePaused) return;
         if (GameManager.Instance.PlayerState == PlayerActionState.Idle)
         {
             Move();
@@ -149,5 +150,20 @@ public class Player : MonoBehaviour
                 displayText.text = "";
                 break;
         }
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameOver += HandleGameOver;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameOver -= HandleGameOver;
+    }
+
+    void HandleGameOver()
+    {
+        gameObject.SetActive(false);
     }
 }

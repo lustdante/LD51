@@ -1,14 +1,18 @@
 using System;
+using System.Linq;
 using System.Collections;
 using UnityEngine;
-using DG.Tweening;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public enum PlayerActionState {Idle, Studying, Playing, Napping};
+public enum MotherState {Safe, Alert};
 
 public class GameManager : Singleton<GameManager>
 {
     public static Action<int> OnPlayerLevelUp;
+    public static Action OnGameOver;
 
     [SerializeField] Transform doorPos;
     [SerializeField] GameObject enemyPrefab;
@@ -34,6 +38,9 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] TextMeshProUGUI eventText;
     [SerializeField] TextMeshProUGUI gameLevel;
     [SerializeField] TextMeshProUGUI studyGrade;
+    [SerializeField] TextMeshProUGUI strikeText;
+    [SerializeField] Image gameOverPanel;
+    [SerializeField] Image dayOverPanel;
 
     private bool gameEventStarted = false;
     private float studyProgress = 0.0f;
@@ -42,8 +49,10 @@ public class GameManager : Singleton<GameManager>
     private float focusProgress = 0.0f;
     private float tiredProgress = 0.0f;
 
+    private int strikeCount = 0;
     private int currentGrade = -1;
     private int currentLevel = -1;
+    private IEnumerator mainGameLoop;
 
     private PlayerActionState playerState = PlayerActionState.Idle;
     public PlayerActionState PlayerState {
@@ -69,6 +78,10 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    private MotherState motherState = MotherState.Safe;
+
+    public bool IsGamePaused = false;
+
     private void Start()
     {
         studyMeter.MaxValue = studyGoal;
@@ -79,6 +92,8 @@ public class GameManager : Singleton<GameManager>
 
         UpdatePlayerLevelText();
         UpdateStudyGradeText();
+
+        StartEventLoop();
     }
 
     private void Update()
@@ -88,6 +103,17 @@ public class GameManager : Singleton<GameManager>
         float tiredMult = 1.0f;
         float gameMult = 1.0f;
         string studyMults = "";
+
+        if (IsGamePaused) return;
+
+        if (motherState == MotherState.Alert)
+        {
+            if (playerState == PlayerActionState.Playing)
+            {
+                HandleGameOver();
+                return;
+            }
+        }
 
         switch (playerState)
         {
@@ -179,21 +205,29 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void HandleGameOver()
+    {
+        IsGamePaused = true;
+        if (mainGameLoop != null) StopCoroutine(mainGameLoop);
+        OnGameOver?.Invoke();
+        gameOverPanel.gameObject.SetActive(true);
+    }
+
+    public void BackToTitleScene()
+    {
+        SceneManager.LoadScene("TitleScene");
+    }
+
     private void OnEnable()
     {
-        Timer.OnTimerEnded += TimerEnded;
         Clock.OnGameEvent += HandleGameEvent;
+        Clock.OnDayEnd += HandleDayOver;
     }
 
     private void OnDisable()
     {
-        Timer.OnTimerEnded -= TimerEnded;
         Clock.OnGameEvent -= HandleGameEvent;
-    }
-
-    void TimerEnded()
-    {
-        StartCoroutine(RunTestEvent());
+        Clock.OnDayEnd -= HandleDayOver;
     }
 
     void HandleGameEvent(GameEventTime eventTime)
@@ -211,9 +245,18 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    void HandleDayOver()
+    {
+        IsGamePaused = true;
+        if (mainGameLoop != null) StopCoroutine(mainGameLoop);
+        OnGameOver?.Invoke();
+        dayOverPanel.gameObject.SetActive(true);
+    }
+
     public void StartEventLoop()
     {
-        StartCoroutine(EventLoop());
+        mainGameLoop = EventLoop();
+        StartCoroutine(mainGameLoop);
     }
 
     IEnumerator EventLoop()
@@ -226,9 +269,35 @@ public class GameManager : Singleton<GameManager>
 
     IEnumerator RunTestEvent()
     {
+        // Knock time
+        yield return new WaitForSeconds(1.0f);
         GameObject obj = Instantiate(enemyPrefab, doorPos.position, Quaternion.Euler(0, 0, 180), transform);
-        obj.transform.DOMoveX(5, 2.0f).SetEase(Ease.OutBounce).WaitForCompletion();
-        yield return new WaitForSeconds(3.0f);
+        yield return new WaitForSeconds(0.1f);
+
+        motherState = MotherState.Alert;
+
+        if (playerState != PlayerActionState.Studying)
+        {
+            IsGamePaused = true;
+            yield return new WaitForSeconds(1.0f);
+            IncrementAndUpdateStrikeText();
+            if (strikeCount >= 3)
+            {
+                HandleGameOver();
+                yield return null;
+            }
+            yield return new WaitForSeconds(1.0f);
+            IsGamePaused = false;
+            motherState = MotherState.Safe;
+        }
+        else
+        {
+            float stayingDuration = UnityEngine.Random.Range(3.0f, 5.0f);
+            yield return new WaitForSeconds(stayingDuration);
+
+            motherState = MotherState.Safe;
+            yield return new WaitForSeconds(0.1f);
+        }
         Destroy(obj);
         yield return new WaitForSeconds(0.5f);
     }
@@ -266,5 +335,14 @@ public class GameManager : Singleton<GameManager>
             currentGrade = nextGrade;
             studyGrade.text = letterGrade;
         }
+    }
+
+    void IncrementAndUpdateStrikeText()
+    {
+        strikeCount += 1;
+        string text = "Strikes - ";
+        foreach (var i in Enumerable.Range(0, 3 - strikeCount)) text += "0";
+        foreach (var i in Enumerable.Range(0, strikeCount)) text += "X";
+        strikeText.text = text;
     }
 }

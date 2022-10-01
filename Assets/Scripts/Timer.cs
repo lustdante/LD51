@@ -38,7 +38,7 @@ public class Timer : MonoBehaviour
 
     void Update()
     {
-        if (!timerStarted) return;
+        if (!timerStarted || GameManager.Instance.IsGamePaused) return;
         elapsedTime -= Time.deltaTime;
         UpdateTimerText();
         if (elapsedTime < 0) 

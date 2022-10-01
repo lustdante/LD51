@@ -6,16 +6,15 @@ using TMPro;
 
 public class Timer : MonoBehaviour
 {
-    const float MAX_TIME = 3.0f;
-
     public static Action OnTimerEnded;
 
+    [SerializeField] private float time = 3.0f;
     [SerializeField] private TextMeshProUGUI timer;
     [SerializeField] private Image timerBar;
 
     private bool timerStarted = false;
     private bool timerFinished = false;
-    private float elapsedTime = MAX_TIME;
+    private float elapsedTime = 0.0f;
 
     public IEnumerator StartTimerUntilDone()
     {        
@@ -33,7 +32,7 @@ public class Timer : MonoBehaviour
             gameObject.SetActive(true);
             timerStarted = true;
             timerFinished = false;
-            elapsedTime = MAX_TIME;
+            elapsedTime = time;
         }
     }
 
@@ -63,6 +62,6 @@ public class Timer : MonoBehaviour
     void UpdateTimerText()
     {
         timer.text = ((int)(elapsedTime + 1)).ToString();
-        timerBar.fillAmount = Mathf.Lerp(timerBar.fillAmount, elapsedTime / MAX_TIME, Time.deltaTime * 10f);
+        timerBar.fillAmount = Mathf.Lerp(timerBar.fillAmount, elapsedTime / time, Time.deltaTime * 10f);
     }
 }

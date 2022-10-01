@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using DG.Tweening;
+using TMPro;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -15,11 +16,12 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] Meter focusMeter;
     [SerializeField] float studyGoal = 100.0f;
     [SerializeField] float playGoal = 100.0f;
-    [SerializeField] float boredomMax = 10.0f;
-    [SerializeField] float boredomIdleDecay = 0.1f;
-    [SerializeField] float boredomPlayDecay = 1.5f;
+    [SerializeField] float boredomMax = 6.0f;
+    [SerializeField] float boredomIdleDecay = 0.05f;
+    [SerializeField] float boredomPlayDecay = 1.0f;
     [SerializeField] float focusMax = 3.0f;
     [SerializeField] float focusDecay = 1.5f;
+    [SerializeField] TextMeshProUGUI studyMultText;
 
     private float studyProgress = 0.0f;
     private float playProgress = 0.0f;
@@ -32,6 +34,7 @@ public class GameManager : Singleton<GameManager>
         set {
             studyMeter.gameObject.SetActive(false);
             playMeter.gameObject.SetActive(false);
+            studyMultText.text = "";
 
             switch (value)
             {
@@ -58,6 +61,10 @@ public class GameManager : Singleton<GameManager>
 
     private void Update()
     {
+        float boredomMult = 1.0f;
+        float focusMult = 1.0f;
+        string studyMults = "";
+
         switch (playerState)
         {
             case PlayerActionState.Idle:
@@ -75,12 +82,40 @@ public class GameManager : Singleton<GameManager>
                 focusMeter.Value = focusProgress;
                 break;
             case PlayerActionState.Studying:
-                studyProgress = Mathf.Clamp(studyProgress + Time.deltaTime, 0, studyGoal);
+                if (boredomProgress < (boredomMax / 2))
+                {
+                    boredomMult = 1.5f;
+                    studyMults += "x 1.5 Not bored\n";
+                }
+                else if (boredomProgress < (boredomMax - float.Epsilon))
+                {
+                    boredomMult = 1.2f;
+                    studyMults += "x 1.2 A bit bored\n";
+                }
+                else
+                {
+                    boredomMult = 0.5f;
+                    studyMults += "x 0.5 Very bored\n";
+                }
+
+                if (focusProgress < (focusMax * 0.8))
+                {
+                    focusMult = 0.5f;
+                    studyMults += "x 0.5 Not focused\n";
+                }
+                else
+                {
+                    focusMult = 1.5f;
+                    studyMults += "x 1.5 Focused\n";
+                }
+
+                studyProgress = Mathf.Clamp(studyProgress + Time.deltaTime * boredomMult * focusMult, 0, studyGoal);
                 studyMeter.Value = studyProgress;
                 boredomProgress = Mathf.Clamp(boredomProgress + Time.deltaTime, 0, boredomMax);
                 boredomMeter.Value = boredomProgress;
                 focusProgress = Mathf.Clamp(focusProgress + Time.deltaTime, 0, focusMax);
                 focusMeter.Value = focusProgress;
+                studyMultText.text = studyMults;
                 break;
         }
     }

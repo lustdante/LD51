@@ -38,14 +38,12 @@ public class Timer : MonoBehaviour
 
     void Update()
     {
-        if (timerStarted)
+        if (!timerStarted) return;
+        elapsedTime -= Time.deltaTime;
+        UpdateTimerText();
+        if (elapsedTime < 0) 
         {
-            elapsedTime -= Time.deltaTime;
-            UpdateTimerText();
-            if (elapsedTime < 0) 
-            {
-                DisableTimer();
-            }
+            DisableTimer();
         }
     }
 

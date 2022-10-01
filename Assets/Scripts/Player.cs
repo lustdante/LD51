@@ -18,7 +18,7 @@ public class Player : MonoBehaviour
     [SerializeField] Collider2D sleepCollider;
     [SerializeField] PlayArea playArea;
 
-    private GameManager.PlayerActionState actionableState = GameManager.PlayerActionState.Idle;
+    private PlayerActionState actionableState = PlayerActionState.Idle;
 
     Vector2 minBounds;
     Vector2 maxBounds;
@@ -31,7 +31,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameManager.Instance.PlayerState == GameManager.PlayerActionState.Idle)
+        if (GameManager.Instance.PlayerState == PlayerActionState.Idle)
         {
             Move();
         }
@@ -68,7 +68,7 @@ public class Player : MonoBehaviour
     void OnConfirm(InputValue value)
     {
         if (!value.isPressed) return;
-        if (actionableState == GameManager.PlayerActionState.Playing)
+        if (actionableState == PlayerActionState.Playing)
         {
             if (playArea.MonitorisOn || playArea.IsTurningOn)
             {
@@ -89,9 +89,10 @@ public class Player : MonoBehaviour
         {
             switch (GameManager.Instance.PlayerState)
             {
-                case GameManager.PlayerActionState.Idle:
+                case PlayerActionState.Idle:
+                    if (actionableState == PlayerActionState.Playing && !playArea.MonitorisOn) break;
                     GameManager.Instance.PlayerState = actionableState;
-                    actionableState = GameManager.PlayerActionState.Idle;
+                    actionableState = PlayerActionState.Idle;
                     studyCollider.enabled = false;
                     playCollider.enabled = false;
                     sleepCollider.enabled = false;
@@ -101,7 +102,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            GameManager.Instance.PlayerState = GameManager.PlayerActionState.Idle;
+            GameManager.Instance.PlayerState = PlayerActionState.Idle;
             studyCollider.enabled = true;
             playCollider.enabled = true;
             sleepCollider.enabled = true;
@@ -114,11 +115,11 @@ public class Player : MonoBehaviour
         switch (other.tag)
         {
             case "StudyArea":
-                actionableState = GameManager.PlayerActionState.Studying;
+                actionableState = PlayerActionState.Studying;
                 displayText.text = "Hold X to Study";
                 break;
             case "PlayArea":
-                actionableState = GameManager.PlayerActionState.Playing;
+                actionableState = PlayerActionState.Playing;
 
                 if (playArea.MonitorisOn)
                 {
@@ -131,7 +132,7 @@ public class Player : MonoBehaviour
 
                 break;
             case "SleepArea":
-                actionableState = GameManager.PlayerActionState.Napping;
+                actionableState = PlayerActionState.Napping;
                 displayText.text = "Hold X to Nap";
                 break;
         }
@@ -144,7 +145,7 @@ public class Player : MonoBehaviour
             case "StudyArea":
             case "PlayArea":
             case "SleepArea":
-                actionableState = GameManager.PlayerActionState.Idle;
+                actionableState = PlayerActionState.Idle;
                 displayText.text = "";
                 break;
         }

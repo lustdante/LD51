@@ -1,27 +1,12 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class GameManager : Singleton<GameManager>
 {
+    [SerializeField] Transform doorPos;
+    [SerializeField] GameObject enemyPrefab;
     [SerializeField] Timer timer;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void StartTimer()
-    {
-        timer.StartTimer();
-    }
 
     private void OnEnable()
     {
@@ -35,6 +20,30 @@ public class GameManager : Singleton<GameManager>
 
     void TimerEnded()
     {
-        Debug.Log("timer ended!");
+        StartCoroutine(RunTestEvent());
+    }
+
+    public void StartEventLoop()
+    {
+        // timer.gameObject.SetActive(true);
+        // timer.StartTimer();
+        StartCoroutine(EventLoop());
+    }
+
+    IEnumerator EventLoop()
+    {
+        while (true) {
+            yield return timer.StartTimerUntilDone();
+            yield return RunTestEvent();
+        }
+    }
+
+    IEnumerator RunTestEvent()
+    {
+        GameObject obj = Instantiate(enemyPrefab, doorPos.position, Quaternion.Euler(0, 0, 180), transform);
+        obj.transform.DOMoveX(5, 2.0f).SetEase(Ease.OutBounce).WaitForCompletion();
+        yield return new WaitForSeconds(3.0f);
+        Destroy(obj);
+        yield return new WaitForSeconds(0.5f);
     }
 }

@@ -54,10 +54,7 @@ public class Player : MonoBehaviour
     {
         if (value.isPressed)
         {
-            // timer.gameObject.SetActive(true);
-            // Timer.Instance.gameObject.SetActive(true);
-            // Timer.Instance.StartTimer();
-            GameManager.Instance.StartTimer();
+            GameManager.Instance.StartEventLoop();
         }
     }
 }

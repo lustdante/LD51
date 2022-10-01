@@ -1,30 +1,39 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class Timer : MonoBehaviour
 {
+    const float MAX_TIME = 3.0f;
+
     public static Action OnTimerEnded;
 
     [SerializeField] private TextMeshProUGUI timer;
     [SerializeField] private Image timerBar;
 
     private bool timerStarted = false;
-    private float elapsedTime = 10.0f;
+    private bool timerFinished = false;
+    private float elapsedTime = MAX_TIME;
 
-    void Awake()
-    {
-        gameObject.SetActive(false);
+    public IEnumerator StartTimerUntilDone()
+    {        
+        StartTimer();
+        while (timerFinished == false) 
+        {
+            yield return null;
+        }
     }
 
     public void StartTimer()
     {
-        gameObject.SetActive(true);
         if (!timerStarted)
         {
+            gameObject.SetActive(true);
             timerStarted = true;
-            elapsedTime = 10.0f;
+            timerFinished = false;
+            elapsedTime = MAX_TIME;
         }
     }
 
@@ -44,6 +53,7 @@ public class Timer : MonoBehaviour
     void DisableTimer()
     {
         timerStarted = false;
+        timerFinished = true;
         elapsedTime = 0.0f;
         timerBar.fillAmount = 1.0f;
         OnTimerEnded?.Invoke();
@@ -53,6 +63,6 @@ public class Timer : MonoBehaviour
     void UpdateTimerText()
     {
         timer.text = ((int)(elapsedTime + 1)).ToString();
-        timerBar.fillAmount = Mathf.Lerp(timerBar.fillAmount, elapsedTime / 10.0f, Time.deltaTime * 10f);
+        timerBar.fillAmount = Mathf.Lerp(timerBar.fillAmount, elapsedTime / MAX_TIME, Time.deltaTime * 10f);
     }
 }

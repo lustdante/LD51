@@ -395,8 +395,8 @@ public class GameManager : Singleton<GameManager>
         yield return new WaitForSeconds(0.1f);
 
         motherState = MotherState.Alert;
-
-        if (playerState != PlayerActionState.Studying && playerState != PlayerActionState.Playing)
+        bool youGetStrike = (playerState != PlayerActionState.Studying && playerState != PlayerActionState.Playing) || playArea.MonitorisOn;
+        if (youGetStrike)
         {
             IsGamePaused = true;
             yield return new WaitForSeconds(1.0f);

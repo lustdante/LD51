@@ -12,11 +12,13 @@ public enum MotherState {Safe, Alert};
 public class GameManager : Singleton<GameManager>
 {
     public static Action<int> OnPlayerLevelUp;
-    public static Action OnGameOver;
 
     [SerializeField] Transform doorPos;
-    [SerializeField] GameObject enemyPrefab;
+    [SerializeField] GameObject playerPrefab;
+    [SerializeField] GameObject motherPrefab;
     [SerializeField] Timer timer;
+    [SerializeField] Clock clock;
+    [SerializeField] Image StatusPanel;
     [SerializeField] Meter studyMeter;
     [SerializeField] Meter playMeter;
     [SerializeField] Meter boredomMeter;
@@ -41,18 +43,26 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] TextMeshProUGUI strikeText;
     [SerializeField] Image gameOverPanel;
     [SerializeField] Image dayOverPanel;
+    [SerializeField] Collider2D studyCollider;
+    [SerializeField] Collider2D playCollider;
+    [SerializeField] Collider2D sleepCollider;
+    [SerializeField] PlayArea playArea;
 
-    private bool gameEventStarted = false;
+    private bool expEventStarted = false;
+    private bool isPlayingIntro = false;
     private float studyProgress = 0.0f;
     private float playProgress = 0.0f;
     private float boredomProgress = 0.0f;
     private float focusProgress = 0.0f;
     private float tiredProgress = 0.0f;
+    private Player player;
+    private GameObject mother;
 
     private int strikeCount = 0;
     private int currentGrade = -1;
     private int currentLevel = -1;
     private IEnumerator mainGameLoop;
+    private IEnumerator introCoroutine;
 
     private PlayerActionState playerState = PlayerActionState.Idle;
     public PlayerActionState PlayerState {
@@ -80,7 +90,10 @@ public class GameManager : Singleton<GameManager>
 
     private MotherState motherState = MotherState.Safe;
 
-    public bool IsGamePaused = false;
+    public bool IsGameStarted = false;
+    public bool IsGamePaused = true;
+
+    public PlayArea PlayArea { get { return playArea; } }
 
     private void Start()
     {
@@ -93,7 +106,55 @@ public class GameManager : Singleton<GameManager>
         UpdatePlayerLevelText();
         UpdateStudyGradeText();
 
-        StartEventLoop();
+        StartCoroutine(PlayerWalksIntoRoom());
+    }
+
+    IEnumerator PlayerWalksIntoRoom()
+    {
+        yield return new WaitForSeconds(3.0f);
+        GameObject go = Instantiate(playerPrefab, doorPos.position, Quaternion.identity);
+        player = go.GetComponent<Player>();
+
+        yield return new WaitForSeconds(1.0f);
+        IsGamePaused = false;
+    }
+
+
+    void PlayIntro()
+    {
+        introCoroutine = MotherWalksInFirstTime();
+        StartCoroutine(introCoroutine);
+    }
+
+    IEnumerator MotherWalksInFirstTime()
+    {
+        // Knock time
+        yield return new WaitForSeconds(1.0f);
+        mother = Instantiate(motherPrefab, doorPos.position, Quaternion.identity, transform);
+        
+        // This is where mom talks about all the rules
+    }
+
+    IEnumerator MotherWalksOutFirstTime()
+    {
+        yield return new WaitForSeconds(0.5f);
+        if (mother) Destroy(mother);
+    }
+
+    public void StartGame()
+    {
+        // If introCoroutine was playing, abort it
+        if (introCoroutine != null)
+        {
+            StopCoroutine(introCoroutine);
+            StartCoroutine(MotherWalksOutFirstTime());
+        }
+    
+        IsGameStarted = true;
+        StatusPanel.gameObject.SetActive(true);
+        clock.gameObject.SetActive(true);
+        mainGameLoop = MainGameLoop();
+        StartCoroutine(mainGameLoop);
     }
 
     private void Update()
@@ -126,20 +187,34 @@ public class GameManager : Singleton<GameManager>
                 boredomMeter.Value = boredomProgress;
                 break;
             case PlayerActionState.Playing:
-                if (gameEventStarted) gameMult = 2.0f;
-                // Focus is decayed naturally
-                focusProgress = Mathf.Clamp(focusProgress - focusDecay * Time.deltaTime, 0, focusMax);
-                focusMeter.Value = focusProgress;
+                if (!IsGameStarted)
+                {
+                    playProgress = Mathf.Clamp(playProgress + Time.deltaTime * gameMult, 0, 1.0f);
+                    playMeter.Value = playProgress;
 
-                playProgress = Mathf.Clamp(playProgress + Time.deltaTime * gameMult, 0, playGoal);
-                playMeter.Value = playProgress;
-                boredomProgress = Mathf.Clamp(boredomProgress - boredomPlayDecay * Time.deltaTime, 0, boredomMax);
-                boredomMeter.Value = boredomProgress;
+                    if (!isPlayingIntro && playProgress >= 1.0f)
+                    {
+                        isPlayingIntro = true;
+                        PlayIntro();
+                    }
+                }
+                else
+                {
+                    if (expEventStarted) gameMult = 2.0f;
+                    // Focus is decayed naturally
+                    focusProgress = Mathf.Clamp(focusProgress - focusDecay * Time.deltaTime, 0, focusMax);
+                    focusMeter.Value = focusProgress;
 
-                tiredProgress = Mathf.Clamp(tiredProgress + Time.deltaTime, 0, tiredMax);
-                tiredMeter.Value = tiredProgress;
+                    playProgress = Mathf.Clamp(playProgress + Time.deltaTime * gameMult, 0, playGoal);
+                    playMeter.Value = playProgress;
+                    boredomProgress = Mathf.Clamp(boredomProgress - boredomPlayDecay * Time.deltaTime, 0, boredomMax);
+                    boredomMeter.Value = boredomProgress;
 
-                UpdatePlayerLevelText();
+                    tiredProgress = Mathf.Clamp(tiredProgress + Time.deltaTime, 0, tiredMax);
+                    tiredMeter.Value = tiredProgress;
+
+                    UpdatePlayerLevelText();
+                }
                 break;
             case PlayerActionState.Studying:
                 if (boredomProgress < (boredomMax / 2))
@@ -209,7 +284,6 @@ public class GameManager : Singleton<GameManager>
     {
         IsGamePaused = true;
         if (mainGameLoop != null) StopCoroutine(mainGameLoop);
-        OnGameOver?.Invoke();
         gameOverPanel.gameObject.SetActive(true);
     }
 
@@ -235,11 +309,11 @@ public class GameManager : Singleton<GameManager>
         switch (eventTime.gameEvent)
         {
             case GameEvent.EventStart:
-                gameEventStarted = true;
+                expEventStarted = true;
                 eventText.gameObject.SetActive(true);
                 break;
             case GameEvent.EventEnd:
-                gameEventStarted = false;
+                expEventStarted = false;
                 eventText.gameObject.SetActive(false);
                 break;
         }
@@ -249,17 +323,17 @@ public class GameManager : Singleton<GameManager>
     {
         IsGamePaused = true;
         if (mainGameLoop != null) StopCoroutine(mainGameLoop);
-        OnGameOver?.Invoke();
         dayOverPanel.gameObject.SetActive(true);
     }
 
-    public void StartEventLoop()
+    public void EnableColliders(bool enabled)
     {
-        mainGameLoop = EventLoop();
-        StartCoroutine(mainGameLoop);
+        studyCollider.enabled = enabled;
+        playCollider.enabled = enabled;
+        sleepCollider.enabled = enabled;
     }
 
-    IEnumerator EventLoop()
+    IEnumerator MainGameLoop()
     {
         while (true) {
             yield return timer.StartTimerUntilDone();
@@ -271,12 +345,12 @@ public class GameManager : Singleton<GameManager>
     {
         // Knock time
         yield return new WaitForSeconds(1.0f);
-        GameObject obj = Instantiate(enemyPrefab, doorPos.position, Quaternion.Euler(0, 0, 180), transform);
+        GameObject obj = Instantiate(motherPrefab, doorPos.position, Quaternion.identity, transform);
         yield return new WaitForSeconds(0.1f);
 
         motherState = MotherState.Alert;
 
-        if (playerState != PlayerActionState.Studying)
+        if (playerState != PlayerActionState.Studying && playerState != PlayerActionState.Playing)
         {
             IsGamePaused = true;
             yield return new WaitForSeconds(1.0f);

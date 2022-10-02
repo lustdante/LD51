@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - PlayArea
+  - SleepArea
+  - StudyArea
   layers:
   - Default
   - TransparentFX
@@ -40,4 +43,19 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 4197379223
+    locked: 0
+  - name: Furniture
+    uniqueID: 1306652317
+    locked: 0
+  - name: Player
+    uniqueID: 4220820873
+    locked: 0
+  - name: Foreground
+    uniqueID: 3936580835
+    locked: 0
+  - name: PlayerUI
+    uniqueID: 890393945
     locked: 0

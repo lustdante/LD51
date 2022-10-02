@@ -16,17 +16,28 @@ public class Timer : MonoBehaviour
     private bool timerFinished = false;
     private float elapsedTime = 0.0f;
 
-    public IEnumerator StartTimerUntilDone()
+    public IEnumerator StartTimerUntilDone(bool showUI)
     {        
-        StartTimer();
+        StartTimer(showUI);
         while (timerFinished == false) 
         {
             yield return null;
         }
     }
 
-    public void StartTimer()
+    public void StartTimer(bool showUI)
     {
+        if (showUI)
+        {
+            timer.gameObject.SetActive(true);
+            timerBar.gameObject.SetActive(true);
+        }
+        else
+        {
+            timer.gameObject.SetActive(false);
+            timerBar.gameObject.SetActive(false);
+        }
+
         if (!timerStarted)
         {
             gameObject.SetActive(true);

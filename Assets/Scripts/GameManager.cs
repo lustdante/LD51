@@ -46,6 +46,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] TextMeshProUGUI gameLevel;
     [SerializeField] TextMeshProUGUI studyGrade;
     [SerializeField] TextMeshProUGUI strikeText;
+    [SerializeField] TextMeshProUGUI resultText;
     [SerializeField] Image gameOverPanel;
     [SerializeField] Image dayOverPanel;
     [SerializeField] Collider2D studyCollider;
@@ -65,6 +66,7 @@ public class GameManager : Singleton<GameManager>
     private int strikeCount = 0;
     private int currentGrade = -1;
     private int currentLevel = -1;
+    private int currentCycle = 0;
     private IEnumerator mainGameLoop;
     private IEnumerator introCoroutine;
 
@@ -166,6 +168,7 @@ public class GameManager : Singleton<GameManager>
         IsGameStarted = true;
         StatusPanel.gameObject.SetActive(true);
         clock.gameObject.SetActive(true);
+        currentCycle = 0;
         mainGameLoop = MainGameLoop();
         StartCoroutine(mainGameLoop);
     }
@@ -337,6 +340,34 @@ public class GameManager : Singleton<GameManager>
         IsGamePaused = true;
         if (mainGameLoop != null) StopCoroutine(mainGameLoop);
         dayOverPanel.gameObject.SetActive(true);
+
+        float studyPercentile = studyProgress / studyGoal;
+        string output = "";
+
+        if (studyPercentile < 0.6f) { output += "I failed the exam. My mom is going to kill me."; }
+        else if (studyPercentile < 0.675f) { output += "I got D in the exam. My mom is very disappointed."; }
+        else if (studyPercentile < 0.705f) { output += "I got C- in the exam. My mom is very disappointed."; }
+        else if (studyPercentile < 0.745f) { output += "I got C in the exam. My mom is very disappointed."; }
+        else if (studyPercentile < 0.775f) { output += "I got C+ in the exam. My mom is a bit disappointed."; }
+        else if (studyPercentile < 0.815f) { output += "I got B- in the exam. My mom is a bit disappointed."; }
+        else if (studyPercentile < 0.845f) { output += "I got B in the exam. My mom is slightly disappointed."; }
+        else if (studyPercentile < 0.885f) { output += "I got B+ in the exam. My mom is slightly disappointed."; }
+        else if (studyPercentile < 0.915f) { output += "I got A- in the exam. My mom is content."; }
+        else if (studyPercentile < 0.966f) { output += "I got A in the exam. My mom is content."; }
+        else { output += "I got A+! My mom will finally approve me!"; }
+
+        output += "\n\n";
+
+        if (playProgress == playGoal)
+        {
+            output += "I maxed out the level and I won the exclusive sword!";
+        }
+        else
+        {
+            output += "Despite all the effort, I could not win the exclusive event reward.";
+        }
+
+        resultText.text = output;
     }
 
     public void EnableColliders(bool enabled)
@@ -349,8 +380,9 @@ public class GameManager : Singleton<GameManager>
     IEnumerator MainGameLoop()
     {
         while (true) {
-            yield return timer.StartTimerUntilDone();
+            yield return timer.StartTimerUntilDone(currentCycle < 8);
             yield return RunTestEvent();
+            currentCycle += 1;
         }
     }
 

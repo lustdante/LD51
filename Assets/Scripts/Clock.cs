@@ -28,7 +28,7 @@ public class Clock : MonoBehaviour
     [SerializeField] private int endHour = 10;
     [SerializeField] private float totalSeconds = 300.0f;
     [SerializeField] private TextMeshProUGUI clock;
-    [SerializeField] private TextMeshProUGUI debugClock;
+    // [SerializeField] private TextMeshProUGUI debugClock;
     [SerializeField] List<GameEventTime> gameEventSchedule = new List<GameEventTime>();
 
     private int eventIndex = 0;
@@ -80,6 +80,6 @@ public class Clock : MonoBehaviour
         else text += "00 PM";
 
         clock.text = text;
-        debugClock.text = elapsedTime.ToString("0.00") + " SEC";
+        // debugClock.text = elapsedTime.ToString("0.00") + " SEC";
     }
 }

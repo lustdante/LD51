@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
     private Rigidbody2D body;
     private Collider2D myCollider;
 
+    bool prevPosSet = false;
     Vector2 prevPos;
     Vector2 minBounds;
     Vector2 maxBounds;
@@ -44,6 +45,7 @@ public class Player : MonoBehaviour
             {
                 case PlayerActionState.Studying:
                     prevPos = transform.position;
+                    prevPosSet = true;
                     myCollider.enabled = false;
                     body.MovePosition(GameManager.Instance.StudyPos.position);
                     GameManager.Instance.Chair.SetActive(false);
@@ -51,6 +53,7 @@ public class Player : MonoBehaviour
                     break;
                 case PlayerActionState.Playing:
                     prevPos = transform.position;
+                    prevPosSet = true;
                     myCollider.enabled = false;
                     body.MovePosition(GameManager.Instance.PlayPos.position);
                     GameManager.Instance.Chair.SetActive(false);
@@ -58,12 +61,17 @@ public class Player : MonoBehaviour
                     break;
                 case PlayerActionState.Napping:
                     prevPos = transform.position;
+                    prevPosSet = true;
                     myCollider.enabled = false;
                     body.MovePosition(GameManager.Instance.NapPos.position);
                     animator.SetBool("Napping", true);
                     break;
                 default:
-                    transform.position = prevPos;
+                    if (prevPosSet)
+                    {
+                        transform.position = prevPos;
+                        prevPosSet = false;
+                    }
                     myCollider.enabled = true;
                     GameManager.Instance.Chair.SetActive(true);
                     animator.SetBool("Playing", false);

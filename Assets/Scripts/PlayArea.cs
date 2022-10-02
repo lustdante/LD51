@@ -2,18 +2,25 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class PlayArea : MonoBehaviour
 {
     [SerializeField] SpriteRenderer monitorImage;
     [SerializeField] Image bar;
-    [SerializeField] float turnonTime = 3.0f;
+    [SerializeField] float turnonTime = 2.0f;
 
     private float turnonProgress = 0.0f;
     private IEnumerator coroutine;
 
     public bool IsTurningOn = false;
     public bool MonitorisOn = false;
+
+    void Start()
+    {
+        if (MonitorisOn) monitorImage.color = new Color(1f, 1f, 1f, 1f);
+        else monitorImage.color = new Color(1f, 1f, 1f, 0f);
+    }
 
     void Update()
     {
@@ -36,8 +43,9 @@ public class PlayArea : MonoBehaviour
 
     public void TurnOffMonitor()
     {
+        monitorImage.DOKill();
         MonitorisOn = false;
-        monitorImage.color = new Color32(0, 0, 0 ,255);
+        monitorImage.color = new Color(1f, 1f, 1f, 0f);
         bar.fillAmount = 0.0f;
         IsTurningOn = false;
         if (coroutine != null) StopCoroutine(coroutine);
@@ -45,9 +53,8 @@ public class PlayArea : MonoBehaviour
 
     IEnumerator TurnOn(Action callback)
     {
-        yield return new WaitForSeconds(turnonTime);
+        yield return monitorImage.DOFade(1.0f, turnonTime).SetEase(Ease.InElastic).WaitForCompletion();
         MonitorisOn = true;
-        monitorImage.color = new Color32(255, 255, 0 ,255);
         callback();
         IsTurningOn = false;
         coroutine = null;

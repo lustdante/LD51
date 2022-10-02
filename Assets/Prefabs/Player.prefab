@@ -374,7 +374,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.32156864, g: 0.4509804, b: 0.3019608, a: 1}
+  m_Color: {r: 0.30695742, g: 0.3962264, b: 0.29343182, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -471,6 +471,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
+  animator: {fileID: 7392676345639622432}
   speechBubble: {fileID: 6050772100574081922}
   displayText: {fileID: 196679807}
   paddingLeft: 1
@@ -534,6 +535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4305158039783836522}
   - component: {fileID: 4305158039783836523}
+  - component: {fileID: 7392676345639622432}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -608,3 +610,23 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &7392676345639622432
+Animator:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4305158039783836521}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 8bedf96a3f0502847a62b5fd4c53ee0c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0

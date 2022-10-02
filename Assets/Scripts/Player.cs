@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
     [SerializeField] float moveSpeed = 5f;
     Vector2 rawInput;
 
+    [SerializeField] private Animator animator;
     [SerializeField] private Image speechBubble;
     [SerializeField] private TextMeshProUGUI displayText;
     [SerializeField] float paddingLeft;
@@ -19,11 +20,14 @@ public class Player : MonoBehaviour
     private PlayArea playArea;
     private PlayerActionState actionableState = PlayerActionState.Idle;
     private Rigidbody2D body;
+    private Collider2D myCollider;
 
+    Vector2 prevPos;
     Vector2 minBounds;
     Vector2 maxBounds;
     
-    public string DisplayText {
+    public string DisplayText
+    {
         get { return displayText.text; }
         set {
             if (value == "") speechBubble.gameObject.SetActive(false);
@@ -32,17 +36,59 @@ public class Player : MonoBehaviour
         }
     }
 
+    public PlayerActionState PlayerActionState
+    {
+        get { return GameManager.Instance.PlayerState; }
+        set {
+            switch (value)
+            {
+                case PlayerActionState.Studying:
+                    prevPos = transform.position;
+                    myCollider.enabled = false;
+                    body.MovePosition(GameManager.Instance.StudyPos.position);
+                    GameManager.Instance.Chair.SetActive(false);
+                    animator.SetBool("Studying", true);
+                    break;
+                case PlayerActionState.Playing:
+                    prevPos = transform.position;
+                    myCollider.enabled = false;
+                    body.MovePosition(GameManager.Instance.PlayPos.position);
+                    GameManager.Instance.Chair.SetActive(false);
+                    animator.SetBool("Playing", true);
+                    break;
+                case PlayerActionState.Napping:
+                    prevPos = transform.position;
+                    myCollider.enabled = false;
+                    body.MovePosition(GameManager.Instance.NapPos.position);
+                    animator.SetBool("Napping", true);
+                    break;
+                default:
+                    transform.position = prevPos;
+                    myCollider.enabled = true;
+                    GameManager.Instance.Chair.SetActive(true);
+                    animator.SetBool("Playing", false);
+                    animator.SetBool("Studying", false);
+                    animator.SetBool("Napping", false);
+                    break;
+            }
+            GameManager.Instance.PlayerState = value; 
+        }
+    }
+
     void Start()
     {
         InitCameraBounds();
         body = GetComponent<Rigidbody2D>();
+        myCollider = GetComponent<Collider2D>();
         playArea = GameManager.Instance.PlayArea;
     }
+
+    public bool AnimatorPlaying { get { return animator.GetBool("Playing"); }}
 
     void FixedUpdate()
     {
         if (GameManager.Instance.IsGamePaused) return;
-        if (GameManager.Instance.PlayerState == PlayerActionState.Idle)
+        if (PlayerActionState == PlayerActionState.Idle)
         {
             Move();
         }
@@ -77,6 +123,7 @@ public class Player : MonoBehaviour
         GameManager.Instance.EnableColliders(true);
     }
 
+    // On Press Z
     void OnConfirm(InputValue value)
     {
         if (!value.isPressed) return;
@@ -95,16 +142,19 @@ public class Player : MonoBehaviour
         }
     }
 
+    // On press X
     void OnAct(InputValue value)
     {
         if (GameManager.Instance.IsGamePaused) return;
-
         if (value.isPressed)
         {
+            // Ignore if actionable change doesn't change anything
+            if (actionableState == PlayerActionState) return;
+
             if (!GameManager.Instance.IsGameStarted)
             {
                 bool canStartGame =
-                    GameManager.Instance.PlayerState == PlayerActionState.Idle &&
+                    PlayerActionState == PlayerActionState.Idle &&
                     actionableState == PlayerActionState.Studying &&
                     !playArea.MonitorisOn;
 
@@ -112,11 +162,11 @@ public class Player : MonoBehaviour
                 if (canStartGame) GameManager.Instance.StartGame();
             }
 
-            switch (GameManager.Instance.PlayerState)
+            switch (PlayerActionState)
             {
                 case PlayerActionState.Idle:
                     if (actionableState == PlayerActionState.Playing && !playArea.MonitorisOn) break;
-                    GameManager.Instance.PlayerState = actionableState;
+                    PlayerActionState = actionableState;
                     actionableState = PlayerActionState.Idle;
                     GameManager.Instance.EnableColliders(false);
                     DisplayText = "";
@@ -125,7 +175,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            GameManager.Instance.PlayerState = PlayerActionState.Idle;
+            PlayerActionState = PlayerActionState.Idle;
             GameManager.Instance.EnableColliders(true);
         }
         
@@ -138,9 +188,12 @@ public class Player : MonoBehaviour
             switch (other.tag)
             {
                 case "StudyArea":
-                    actionableState = PlayerActionState.Studying;
-                    if (playArea.MonitorisOn) DisplayText = "You must turn off the monitor";
-                    else DisplayText = "Hold X to Study and Start Day";
+                    if (playArea.MonitorisOn || playArea.IsTurningOn) DisplayText = "You must turn off the monitor";
+                    else
+                    {
+                        DisplayText = "Hold X to Study and Start Day";
+                        actionableState = PlayerActionState.Studying;
+                    }
                     break;
                 case "PlayArea":
                     actionableState = PlayerActionState.Playing;

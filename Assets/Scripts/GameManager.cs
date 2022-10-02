@@ -14,6 +14,10 @@ public class GameManager : Singleton<GameManager>
     public static Action<int> OnPlayerLevelUp;
 
     [SerializeField] Transform doorPos;
+    [SerializeField] public Transform StudyPos;
+    [SerializeField] public Transform PlayPos;
+    [SerializeField] public Transform NapPos;
+    [SerializeField] public GameObject Chair;
     [SerializeField] GameObject playerPrefab;
     [SerializeField] GameObject motherPrefab;
     [SerializeField] Timer timer;

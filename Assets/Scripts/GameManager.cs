@@ -13,13 +13,14 @@ public class GameManager : Singleton<GameManager>
 {
     public static Action<int> OnPlayerLevelUp;
 
+    [SerializeField] Door door;
     [SerializeField] Transform doorPos;
     [SerializeField] public Transform StudyPos;
     [SerializeField] public Transform PlayPos;
     [SerializeField] public Transform NapPos;
     [SerializeField] public GameObject Chair;
     [SerializeField] GameObject playerPrefab;
-    [SerializeField] GameObject motherPrefab;
+    [SerializeField] GameObject mother;
     [SerializeField] Timer timer;
     [SerializeField] Clock clock;
     [SerializeField] Image StatusPanel;
@@ -60,7 +61,6 @@ public class GameManager : Singleton<GameManager>
     private float focusProgress = 0.0f;
     private float tiredProgress = 0.0f;
     private Player player;
-    private GameObject mother;
 
     private int strikeCount = 0;
     private int currentGrade = -1;
@@ -115,11 +115,18 @@ public class GameManager : Singleton<GameManager>
 
     IEnumerator PlayerWalksIntoRoom()
     {
+        // Initial game delay
         yield return new WaitForSeconds(3.0f);
+        door.OpenDoor();
         GameObject go = Instantiate(playerPrefab, doorPos.position, Quaternion.identity);
         player = go.GetComponent<Player>();
 
+        // Delay after player walks in
         yield return new WaitForSeconds(1.0f);
+
+        door.CloseDoor();
+        yield return new WaitForSeconds(0.5f);
+
         IsGamePaused = false;
     }
 
@@ -134,7 +141,8 @@ public class GameManager : Singleton<GameManager>
     {
         // Knock time
         yield return new WaitForSeconds(1.0f);
-        mother = Instantiate(motherPrefab, doorPos.position, Quaternion.identity, transform);
+        door.OpenDoor();
+        mother.SetActive(true);
         
         // This is where mom talks about all the rules
     }
@@ -142,7 +150,8 @@ public class GameManager : Singleton<GameManager>
     IEnumerator MotherWalksOutFirstTime()
     {
         yield return new WaitForSeconds(0.5f);
-        if (mother) Destroy(mother);
+        door.CloseDoor();
+        mother.SetActive(false);
     }
 
     public void StartGame()
@@ -349,7 +358,8 @@ public class GameManager : Singleton<GameManager>
     {
         // Knock time
         yield return new WaitForSeconds(1.0f);
-        GameObject obj = Instantiate(motherPrefab, doorPos.position, Quaternion.identity, transform);
+        door.OpenDoor();
+        mother.SetActive(true);
         yield return new WaitForSeconds(0.1f);
 
         motherState = MotherState.Alert;
@@ -370,13 +380,14 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
-            float stayingDuration = UnityEngine.Random.Range(3.0f, 5.0f);
+            float stayingDuration = UnityEngine.Random.Range(1.0f, 3.0f);
             yield return new WaitForSeconds(stayingDuration);
 
             motherState = MotherState.Safe;
             yield return new WaitForSeconds(0.1f);
         }
-        Destroy(obj);
+        door.CloseDoor();
+        mother.SetActive(false);
         yield return new WaitForSeconds(0.5f);
     }
 
